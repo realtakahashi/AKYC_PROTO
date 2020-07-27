@@ -44,9 +44,16 @@ git = 'https://github.com/paritytech/substrate.git'
 tag = 'v2.0.0-rc4'
 version = '2.0.0-rc4'
 
+[dependencies.serde]
+default-features = false
+# git = 'https://github.com/paritytech/substrate.git'
+# tag = 'v2.0.0-rc4'
+version = '1.0.106'
+
 [features]
 default = ['std']
 std = [
+    'serde/std',
     'codec/std',
     'frame-support/std',
     'frame-system/std',
