@@ -1,5 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::{Decode, Encode};
+
 /// A FRAME pallet template with necessary imports
 
 /// Feel free to remove or edit this file as needed.
@@ -10,12 +12,29 @@
 /// https://github.com/paritytech/substrate/blob/master/frame/example/src/lib.rs
 use frame_support::{decl_error, decl_event, decl_module, decl_storage, dispatch};
 use frame_system::{self as system, ensure_signed};
+use sp_std::vec::Vec;
+
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 
 #[cfg(test)]
 mod mock;
 
 #[cfg(test)]
 mod tests;
+
+#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, Hash)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+pub struct TestData {
+    pub my_name: Vec<u8>,
+    pub my_address: Vec<u8>
+}
+
+impl core::fmt::Debug for TestData {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        write!(f, "Hi")
+    }
+}
 
 /// The pallet's configuration trait.
 pub trait Trait: system::Trait {
@@ -35,6 +54,7 @@ decl_storage! {
         // Here we are declaring a StorageValue, `Something` as a Option<u32>
         // `get(fn something)` is the default getter which returns either the stored `u32` or `None` if nothing stored
         Something get(fn something): Option<u32>;
+        pub TestDatas: map hasher(blake2_128_concat) T::AccountId => TestData;
     }
 }
 
@@ -118,6 +138,16 @@ decl_module! {
                 Err(Error::<T>::TestErrorErrorError)?
             }
         }
+        #[weight = 10_000]
+        pub fn save_testdata(origin, testdata:TestData) -> dispatch::DispatchResult {
+            let registerer = ensure_signed(origin)?;
+            let regist_data = TestData {
+                my_name:testdata.my_name,
+                my_address:testdata.my_address,
+            };
 
+            TestDatas::<T>::insert(&registerer, regist_data);
+            Ok(())
+        }
     }
 }
