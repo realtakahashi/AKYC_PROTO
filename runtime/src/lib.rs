@@ -207,6 +207,10 @@ impl first_pallet::Trait for Runtime {
     type Event = Event;
 }
 
+impl save_data::Trait for Runtime {
+        type Event = Event;
+}
+
 impl aura::Trait for Runtime {
     type AuthorityId = AuraId;
 }

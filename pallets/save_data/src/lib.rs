@@ -1,6 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
+//use primitives::Bytes;
+
 /// A FRAME pallet template with necessary imports
 
 /// Feel free to remove or edit this file as needed.
@@ -11,6 +13,7 @@ use codec::{Decode, Encode};
 /// https://github.com/paritytech/substrate/blob/master/frame/example/src/lib.rs
 use frame_support::{decl_error, decl_event, decl_module, decl_storage, dispatch};
 use frame_system::{self as system, ensure_signed};
+use sp_std::vec::Vec;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -23,31 +26,41 @@ mod tests;
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
-pub struct PrivateData {
+pub struct PrivateData<BlockNumber> {
     pub my_number: Vec<u8>,
-    pub driver_license_number: Vec<u8>,
-    pub medical_number: Vec<u8>,
+    pub driver_license_number: sp_std::vec::Vec<u8>,
+    pub medical_number: sp_std::vec::Vec<u8>,
+    pub register_block_number: BlockNumber,
 }
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
-pub struct PublicData {
-    pub name: Vec<u8>,
-    pub address: Vec<u8>,
+pub struct PublicData<BlockNumber> {
+    pub name: sp_std::vec::Vec<u8>,
+    pub address: sp_std::vec::Vec<u8>,
     pub sexality: u8,
-    pub job: Vec<u8>,
-    pub company: Vec<u8>,
-}
-#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
-pub struct CognitiveInfo<AccountId, Moment> {
-    pub account_id: AccountId,
-    pub public_data: PublicData,
-    pub private_data: PrivateData,
-    pub register_block_number: Moment,
+    pub job: sp_std::vec::Vec<u8>,
+    pub company: sp_std::vec::Vec<u8>,
+    pub register_block_number: BlockNumber,
 }
 
-pub type CognitiveInfoOf<T> =
-    CognitiveInfo<<T as frame_system::Trait>::AccountId, <T as frame_system::Trait>::BlockNumber>;
+#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, Hash)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct ParamPublicData {
+    pub name: sp_std::vec::Vec<u8>,
+    pub address: sp_std::vec::Vec<u8>,
+    pub sexality: u8,
+    pub job: sp_std::vec::Vec<u8>,
+    pub company: sp_std::vec::Vec<u8>,
+}
+
+impl core::fmt::Debug for ParamPublicData {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        write!(f, "Hi")
+    }
+}
+
+pub type PublicDataOf<T> = PublicData<<T as frame_system::Trait>::BlockNumber>;
+pub type PrivateDataOf<T> = PrivateData<<T as frame_system::Trait>::BlockNumber>;
 
 /// The pallet's configuration trait.
 pub trait Trait: system::Trait {
@@ -64,7 +77,8 @@ decl_storage! {
     // ---------------------------------vvvvvvvvvvvvvv
     trait Store for Module<T: Trait> as TemplateModule {
         Something get(fn something): Option<u32>;
-        pub CognitiveInfos: map hasher(blake2_128_concat) T::AccountId => Option<CognitiveInfoOf<T>>;
+        pub PublicDatas get(fn puglic_datas): map hasher(blake2_128_concat) T::AccountId => Option<PublicDataOf<T>>;
+        pub PrivateDatas: map hasher(blake2_128_concat) T::AccountId => Option<PrivateDataOf<T>>;
     }
 }
 
@@ -103,6 +117,39 @@ decl_module! {
         // Initializing events
         // this is needed only if you are using events in your pallet
         fn deposit_event() = default;
+
+
+        /// regist public data
+//        #[weight = 10_000]
+//        pub fn register_public_data(origin,name:sp_std::vec::Vec<u8>,address:sp_std::vec::Vec<u8>,sexality:u8,job:sp_std::vec::Vec<u8>,company:sp_std::vec::Vec<u8>) -> dispatch::DispatchResult {
+//            let registerer = ensure_signed(origin)?;
+//            let register_block_number = <frame_system::Module<T>>::block_number();
+//            let public_data = PublicDataOf::<T> {
+//                name,
+//                address,
+//                sexality,
+//                job,
+//                company,
+//                register_block_number,
+//            };
+//            <PublicDatas<T>>::insert(&registerer, public_data);
+//            Ok(())
+//        }
+        #[weight = 10_000]
+        pub fn register_public_data(origin,public_data:ParamPublicData) -> dispatch::DispatchResult {
+            let registerer = ensure_signed(origin)?;
+            let register_block_number = <frame_system::Module<T>>::block_number();
+            let public_data = PublicDataOf::<T> {
+                name:public_data.name,
+                address:public_data.address,
+                sexality:public_data.sexality,
+                job:public_data.job,
+                company:public_data.company,
+                register_block_number:register_block_number,
+            };
+            <PublicDatas<T>>::insert(&registerer, public_data);
+            Ok(())
+        }
 
         /// Just a dummy entry point.
         /// function that can be called by the external world as an extrinsics call

@@ -7,8 +7,10 @@ license = 'Unlicense'
 name = 'save_data'
 repository = 'https://github.com/substrate-developer-hub/substrate-pallet-template/'
 version = '2.0.0-rc4'
+
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
+
 [dependencies.codec]
 default-features = false
 features = ['derive']
@@ -50,6 +52,12 @@ default-features = false
 # tag = 'v2.0.0-rc4'
 version = '1.0.106'
 
+[dependencies.sp-std]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
+version = '2.0.0-rc4'
+
 [features]
 default = ['std']
 std = [
@@ -58,3 +66,4 @@ std = [
     'frame-support/std',
     'frame-system/std',
 ]
+
