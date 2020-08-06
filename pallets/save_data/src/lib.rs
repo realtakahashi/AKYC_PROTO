@@ -28,29 +28,29 @@ mod tests;
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 pub struct PrivateData<BlockNumber> {
     pub my_number: Vec<u8>,
-    pub driver_license_number: sp_std::vec::Vec<u8>,
-    pub medical_number: sp_std::vec::Vec<u8>,
+    pub driver_license_number: Vec<u8>,
+    pub medical_number: Vec<u8>,
     pub register_block_number: BlockNumber,
 }
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 pub struct PublicData<BlockNumber> {
-    pub name: sp_std::vec::Vec<u8>,
-    pub address: sp_std::vec::Vec<u8>,
+    pub name: Vec<u8>,
+    pub address: Vec<u8>,
     pub sexality: u8,
-    pub job: sp_std::vec::Vec<u8>,
-    pub company: sp_std::vec::Vec<u8>,
+    pub job: Vec<u8>,
+    pub company: Vec<u8>,
     pub register_block_number: BlockNumber,
 }
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct ParamPublicData {
-    pub name: sp_std::vec::Vec<u8>,
-    pub address: sp_std::vec::Vec<u8>,
+    pub name: Vec<u8>,
+    pub address: Vec<u8>,
     pub sexality: u8,
-    pub job: sp_std::vec::Vec<u8>,
-    pub company: sp_std::vec::Vec<u8>,
+    pub job: Vec<u8>,
+    pub company: Vec<u8>,
 }
 
 impl core::fmt::Debug for ParamPublicData {
@@ -59,8 +59,32 @@ impl core::fmt::Debug for ParamPublicData {
     }
 }
 
+#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, Hash,Debug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+pub struct RosterInfomation<BlockNumber,AccountId> {
+    pub address: AccountId,
+    pub purpose_of_posting: Vec<u8>,
+    pub is_alive:bool,
+    pub register_block_number: BlockNumber,
+}
+
+//#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, Hash)]
+//#[cfg_attr(feature = "std", derive(Serialize, Deserialize,Debug))]
+//pub struct ParamRosterInfomation<AccountId> {
+//    pub address: AccountId,
+//    pub purpose_of_posting: Vec<u8>,
+//    pub is_alive:bool,
+//}
+
+//impl core::fmt::Debug<frame_system::Trait::AccountId> for ParamRosterInfomation<frame_system::Trait::AccountId> {
+//    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+//        write!(f, "Hi")
+//    }
+//}
+
 pub type PublicDataOf<T> = PublicData<<T as frame_system::Trait>::BlockNumber>;
 pub type PrivateDataOf<T> = PrivateData<<T as frame_system::Trait>::BlockNumber>;
+pub type RosterInfomationOf<T> =  RosterInfomation<<T as frame_system::Trait>::BlockNumber,<T as frame_system::Trait>::AccountId>;
 
 /// The pallet's configuration trait.
 pub trait Trait: system::Trait {
@@ -77,8 +101,9 @@ decl_storage! {
     // ---------------------------------vvvvvvvvvvvvvv
     trait Store for Module<T: Trait> as TemplateModule {
         Something get(fn something): Option<u32>;
-        pub PublicDatas get(fn puglic_datas): map hasher(blake2_128_concat) T::AccountId => Option<PublicDataOf<T>>;
+        pub PublicDatas : map hasher(blake2_128_concat) T::AccountId => Option<PublicDataOf<T>>;
         pub PrivateDatas: map hasher(blake2_128_concat) T::AccountId => Option<PrivateDataOf<T>>;
+        pub RosterInfomations: map hasher(blake2_128_concat) T::AccountId => Option<RosterInfomationOf<T>>;
     }
 }
 
@@ -92,6 +117,8 @@ decl_event!(
         /// Event `Something` is declared with a parameter of the type `u32` and `AccountId`
         /// To emit this event, we call the deposit function, from our runtime functions
         SomethingStored(u32, AccountId),
+        RegisterPublicData(AccountId),
+        RegisterRosterInfomation(AccountId),
     }
 );
 
@@ -118,23 +145,7 @@ decl_module! {
         // this is needed only if you are using events in your pallet
         fn deposit_event() = default;
 
-
-        /// regist public data
-//        #[weight = 10_000]
-//        pub fn register_public_data(origin,name:sp_std::vec::Vec<u8>,address:sp_std::vec::Vec<u8>,sexality:u8,job:sp_std::vec::Vec<u8>,company:sp_std::vec::Vec<u8>) -> dispatch::DispatchResult {
-//            let registerer = ensure_signed(origin)?;
-//            let register_block_number = <frame_system::Module<T>>::block_number();
-//            let public_data = PublicDataOf::<T> {
-//                name,
-//                address,
-//                sexality,
-//                job,
-//                company,
-//                register_block_number,
-//            };
-//            <PublicDatas<T>>::insert(&registerer, public_data);
-//            Ok(())
-//        }
+        /// Regist Public Data
         #[weight = 10_000]
         pub fn register_public_data(origin,public_data:ParamPublicData) -> dispatch::DispatchResult {
             let registerer = ensure_signed(origin)?;
@@ -148,12 +159,27 @@ decl_module! {
                 register_block_number:register_block_number,
             };
             <PublicDatas<T>>::insert(&registerer, public_data);
+            Self::deposit_event(RawEvent::RegisterPublicData(registerer));
+            Ok(())
+        }
+        
+        /// Regist Roster Information
+        #[weight = 10_000]
+        pub fn register_roster_infomation(origin,param_roster_infomation:RosterInfomation<<T as frame_system::Trait>::BlockNumber,<T as frame_system::Trait>::AccountId>) -> dispatch::DispatchResult {
+            let registerer = ensure_signed(origin)?;
+            let register_block_number = <frame_system::Module<T>>::block_number();
+            let roster_info = RosterInfomationOf::<T> {
+                address: param_roster_infomation.address,
+                purpose_of_posting: param_roster_infomation.purpose_of_posting,
+                is_alive: param_roster_infomation.is_alive,
+                register_block_number: register_block_number,
+            };
+            <RosterInfomations<T>>::insert(&registerer, roster_info);
+            Self::deposit_event(RawEvent::RegisterRosterInfomation(registerer));
             Ok(())
         }
 
-        /// Just a dummy entry point.
-        /// function that can be called by the external world as an extrinsics call
-        /// takes a parameter of the type `AccountId`, stores it, and emits an event
+        /// Sample Function1
         #[weight = 10_000]
         pub fn do_something(origin, something: u32) -> dispatch::DispatchResult {
             // Check it was signed and get the signer. See also: ensure_root and ensure_none
@@ -168,8 +194,7 @@ decl_module! {
             Ok(())
         }
 
-        /// Another dummy entry point.
-        /// takes no parameters, attempts to increment storage value, and possibly throws an error
+        /// Sample Function2
         #[weight = 10_000]
         pub fn cause_error(origin) -> dispatch::DispatchResult {
             // Check it was signed and get the signer. See also: ensure_root and ensure_none

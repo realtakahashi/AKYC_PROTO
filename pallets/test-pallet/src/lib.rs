@@ -24,7 +24,7 @@ mod mock;
 mod tests;
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct TestData {
     pub my_name: Vec<u8>,
     pub my_address: Vec<u8>
