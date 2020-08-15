@@ -60,13 +60,19 @@ impl core::fmt::Debug for ParamPublicData {
 }
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, Hash,Debug)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct RosterInfomation<BlockNumber,AccountId> {
     pub address: AccountId,
     pub purpose_of_posting: Vec<u8>,
     pub is_alive:bool,
     pub register_block_number: BlockNumber,
 }
+
+//#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, Hash,Debug)]
+//#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+//pub struct ReverseResolutionOfRoster<AccountId> {
+//    pub list_of_roster:Vec<AccountId>,
+//}
 
 //#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, Hash)]
 //#[cfg_attr(feature = "std", derive(Serialize, Deserialize,Debug))]

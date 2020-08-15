@@ -53,7 +53,8 @@ decl_storage! {
         // Just a dummy storage item.
         // Here we are declaring a StorageValue, `Something` as a Option<u32>
         // `get(fn something)` is the default getter which returns either the stored `u32` or `None` if nothing stored
-        Something get(fn something): Option<u32>;
+//        Something get(fn something): Option<u32>;
+        Something : Option<u32>;
         pub TestDatas: map hasher(blake2_128_concat) T::AccountId => TestData;
     }
 }
