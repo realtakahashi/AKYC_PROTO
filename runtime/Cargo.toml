@@ -32,6 +32,7 @@ std = [
     'test-pallet/std',
     'first-pallet/std',
     'save_data/std',
+    'com_power/std',
 ]
 
 [dependencies.test-pallet]
@@ -42,6 +43,10 @@ path = '../pallets/test-pallet'
 default-features = false
 #git = 'https://github.com/realtakahashi/substrate-first_pallet.git'
 path = '../pallets/first-pallet'
+
+[dependencies.com_power]
+default-features = false
+path = '../pallets/com_power'
 
 [dependencies.save_data]
 default-features = false

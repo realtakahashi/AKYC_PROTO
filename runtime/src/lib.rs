@@ -211,6 +211,10 @@ impl save_data::Trait for Runtime {
         type Event = Event;
 }
 
+impl com_power::Trait for Runtime {
+        type Event = Event;
+}
+
 impl aura::Trait for Runtime {
     type AuthorityId = AuraId;
 }
@@ -300,6 +304,7 @@ construct_runtime!(
                 TestPallet: test_pallet::{Module, Call, Storage, Event<T>},
                 FirstPallet: first_pallet::{Module, Call, Storage, Event<T>},
                 SaveData: save_data::{Module, Call, Storage, Event<T>},
+                CommunicationPower: com_power::{Module, Call, Storage, Event<T>},
         }
 );
 
