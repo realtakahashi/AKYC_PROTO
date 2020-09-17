@@ -59,12 +59,12 @@ impl core::fmt::Debug for ParamPublicData {
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, Hash,Debug)]
+#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, Hash, Debug)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct RosterInfomation<BlockNumber,AccountId> {
+pub struct RosterInfomation<BlockNumber, AccountId> {
     pub address: AccountId,
     pub purpose_of_posting: Vec<u8>,
-    pub is_alive:bool,
+    pub is_alive: bool,
     pub register_block_number: BlockNumber,
 }
 
@@ -90,7 +90,10 @@ pub struct RosterInfomation<BlockNumber,AccountId> {
 
 pub type PublicDataOf<T> = PublicData<<T as frame_system::Trait>::BlockNumber>;
 pub type PrivateDataOf<T> = PrivateData<<T as frame_system::Trait>::BlockNumber>;
-pub type RosterInfomationOf<T> =  RosterInfomation<<T as frame_system::Trait>::BlockNumber,<T as frame_system::Trait>::AccountId>;
+pub type RosterInfomationOf<T> = RosterInfomation<
+    <T as frame_system::Trait>::BlockNumber,
+    <T as frame_system::Trait>::AccountId,
+>;
 
 /// The pallet's configuration trait.
 pub trait Trait: system::Trait {
@@ -168,7 +171,7 @@ decl_module! {
             Self::deposit_event(RawEvent::RegisterPublicData(registerer));
             Ok(())
         }
-        
+
         /// Regist Roster Information
         #[weight = 10_000]
         pub fn register_roster_infomation(origin,param_roster_infomation:RosterInfomation<<T as frame_system::Trait>::BlockNumber,<T as frame_system::Trait>::AccountId>) -> dispatch::DispatchResult {

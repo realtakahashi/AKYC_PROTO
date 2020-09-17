@@ -80,16 +80,17 @@ decl_event!(
         RegistPersonalData(AccountId),
         RegistCommunityData(Vec<u8>, AccountId),
         RegistCoreMemberOfCommunity(Vec<u8>),
+        RegistMemberOfCommunity(Vec<u8>),
     }
 );
 
 // The pallet's errors
 decl_error! {
     pub enum Error for Module<T: Trait> {
-        /// community already created
-        CommunityAlreadyCreated,
-        /// community is not existed
-        CommunityIsNotExisted,
+        /// already created
+        AlreadyCreated,
+        /// is not existed
+        IsNotExisted,
         /// notAllowed
         NotAllowed,
     }
@@ -130,7 +131,7 @@ decl_module! {
         pub fn create_community(origin,community_data:CommunityData<<T as frame_system::Trait>::BlockNumber,<T as frame_system::Trait>::AccountId>) -> dispatch::DispatchResult {
             // if the community is already regiseterd, it's error.
             if <CommunityDatas<T>>::get(community_data.name.clone()) != None{
-                return Err(Error::<T>::CommunityAlreadyCreated)?;
+                return Err(Error::<T>::AlreadyCreated)?;
             }
 
             let who = ensure_signed(origin)?;
@@ -157,7 +158,7 @@ decl_module! {
             // check exist
             match <CommunityDatas<T>>::get(name_of_community.clone()) {
                 Some(result) => community_data = result,
-                None => return Err(Error::<T>::CommunityIsNotExisted)?,
+                None => return Err(Error::<T>::IsNotExisted)?,
             };
             // check core member do
             let who = ensure_signed(origin)?;
@@ -166,6 +167,50 @@ decl_module! {
                 return Err(Error::<T>::NotAllowed)?;
             }
             community_data.core_member.push(address_of_member);
+            <CommunityDatas<T>>::insert(community_data.name.clone(), community_data);
+            Self::deposit_event(RawEvent::RegistCoreMemberOfCommunity(name_of_community.clone()));
+            Ok(())
+        }
+
+        /// remove core member of the community
+        #[weight = 10_000]
+        fn remove_core_member_of_community(origin,name_of_community:Vec<u8>,address_of_member:<T as frame_system::Trait>::AccountId) -> dispatch::DispatchResult {
+            let mut community_data;
+            // check exist
+            match <CommunityDatas<T>>::get(name_of_community.clone()) {
+                Some(result) => community_data = result,
+                None => return Err(Error::<T>::IsNotExisted)?,
+            };
+            // check core member do
+            let who = ensure_signed(origin)?;
+            let result = community_data.core_member.iter().find(|&s| s == &who);
+            if result == None{
+                return Err(Error::<T>::NotAllowed)?;
+            }
+            community_data.core_member.retain(|x| x!=&address_of_member);
+            community_data.register_block_number = <frame_system::Module<T>>::block_number();
+            <CommunityDatas<T>>::insert(community_data.name.clone(), community_data);
+            Self::deposit_event(RawEvent::RegistCoreMemberOfCommunity(name_of_community.clone()));
+            Ok(())
+        }
+
+        /// add community member
+        #[weight = 10_000]
+        fn add_community_member(origin,name_of_community:Vec<u8>,address_of_member:<T as frame_system::Trait>::AccountId) -> dispatch::DispatchResult {
+            let mut community_data;
+            // check exist
+            match <CommunityDatas<T>>::get(name_of_community.clone()) {
+                Some(result) => community_data = result,
+                None => return Err(Error::<T>::IsNotExisted)?,
+            };
+            // check core member do
+            let who = ensure_signed(origin)?;
+            let result = community_data.core_member.iter().find(|&s| s == &who);
+            if result == None{
+                return Err(Error::<T>::NotAllowed)?;
+            }
+            community_data.member.push(address_of_member);
+            community_data.register_block_number = <frame_system::Module<T>>::block_number();
             <CommunityDatas<T>>::insert(community_data.name.clone(), community_data);
             Self::deposit_event(RawEvent::RegistCoreMemberOfCommunity(name_of_community.clone()));
             Ok(())
