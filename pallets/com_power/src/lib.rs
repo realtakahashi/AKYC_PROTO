@@ -43,6 +43,7 @@ pub struct CommunityData<BlockNumber, AccountId> {
     pub description: Vec<u8>,
     pub core_member: Vec<AccountId>,
     pub member: Vec<AccountId>,
+    pub remove_votes: Vec<AccountId>,
     pub register_block_number: BlockNumber,
 }
 pub type CommunityDataOf<T> =
@@ -81,6 +82,10 @@ decl_event!(
         RegistCommunityData(Vec<u8>, AccountId),
         RegistCoreMemberOfCommunity(Vec<u8>),
         RegistMemberOfCommunity(Vec<u8>),
+        RemoveCoreMemberOfCommunity(Vec<u8>),
+        RemoveMemberOfCommunity(Vec<u8>),
+        RemoveVoteMemberAdded(AccountId),
+        RemoveCommunity(Vec<u8>),
     }
 );
 
@@ -91,8 +96,8 @@ decl_error! {
         AlreadyCreated,
         /// is not existed
         IsNotExisted,
-        /// notAllowed
-        NotAllowed,
+        /// this function can be called by core member only
+        OnlyCoreMember,
     }
 }
 
@@ -144,6 +149,7 @@ decl_module! {
                 description: community_data.description,
                 core_member: core_member,
                 member: Vec::new(),
+                remove_votes: Vec::new(),
                 register_block_number: register_block_number,
             };
             <CommunityDatas<T>>::insert(community_data.name.clone(), r_community_data);
@@ -153,7 +159,7 @@ decl_module! {
 
         /// regist core member of the community
         #[weight = 10_000]
-        fn regist_core_member_of_community(origin,name_of_community:Vec<u8>,address_of_member:<T as frame_system::Trait>::AccountId) -> dispatch::DispatchResult {
+        pub fn regist_core_member_of_community(origin,name_of_community:Vec<u8>,address_of_member:<T as frame_system::Trait>::AccountId) -> dispatch::DispatchResult {
             let mut community_data;
             // check exist
             match <CommunityDatas<T>>::get(name_of_community.clone()) {
@@ -164,7 +170,7 @@ decl_module! {
             let who = ensure_signed(origin)?;
             let result = community_data.core_member.iter().find(|&s| s == &who);
             if result == None{
-                return Err(Error::<T>::NotAllowed)?;
+                return Err(Error::<T>::OnlyCoreMember)?;
             }
             community_data.core_member.push(address_of_member);
             <CommunityDatas<T>>::insert(community_data.name.clone(), community_data);
@@ -174,7 +180,7 @@ decl_module! {
 
         /// remove core member of the community
         #[weight = 10_000]
-        fn remove_core_member_of_community(origin,name_of_community:Vec<u8>,address_of_member:<T as frame_system::Trait>::AccountId) -> dispatch::DispatchResult {
+        pub fn remove_core_member_of_community(origin,name_of_community:Vec<u8>,address_of_member:<T as frame_system::Trait>::AccountId) -> dispatch::DispatchResult {
             let mut community_data;
             // check exist
             match <CommunityDatas<T>>::get(name_of_community.clone()) {
@@ -185,18 +191,19 @@ decl_module! {
             let who = ensure_signed(origin)?;
             let result = community_data.core_member.iter().find(|&s| s == &who);
             if result == None{
-                return Err(Error::<T>::NotAllowed)?;
+                return Err(Error::<T>::OnlyCoreMember)?;
             }
             community_data.core_member.retain(|x| x!=&address_of_member);
+            community_data.remove_votes.retain(|x| x!=&address_of_member);
             community_data.register_block_number = <frame_system::Module<T>>::block_number();
             <CommunityDatas<T>>::insert(community_data.name.clone(), community_data);
-            Self::deposit_event(RawEvent::RegistCoreMemberOfCommunity(name_of_community.clone()));
+            Self::deposit_event(RawEvent::RemoveCoreMemberOfCommunity(name_of_community.clone()));
             Ok(())
         }
 
         /// add community member
         #[weight = 10_000]
-        fn add_community_member(origin,name_of_community:Vec<u8>,address_of_member:<T as frame_system::Trait>::AccountId) -> dispatch::DispatchResult {
+        pub fn add_community_member(origin,name_of_community:Vec<u8>,address_of_member:<T as frame_system::Trait>::AccountId) -> dispatch::DispatchResult {
             let mut community_data;
             // check exist
             match <CommunityDatas<T>>::get(name_of_community.clone()) {
@@ -207,7 +214,7 @@ decl_module! {
             let who = ensure_signed(origin)?;
             let result = community_data.core_member.iter().find(|&s| s == &who);
             if result == None{
-                return Err(Error::<T>::NotAllowed)?;
+                return Err(Error::<T>::OnlyCoreMember)?;
             }
             community_data.member.push(address_of_member);
             community_data.register_block_number = <frame_system::Module<T>>::block_number();
@@ -215,5 +222,66 @@ decl_module! {
             Self::deposit_event(RawEvent::RegistCoreMemberOfCommunity(name_of_community.clone()));
             Ok(())
         }
+
+        /// remove member of the community
+        #[weight = 10_000]
+        pub fn remove_member_of_community(origin,name_of_community:Vec<u8>,address_of_member:<T as frame_system::Trait>::AccountId) -> dispatch::DispatchResult {
+            let mut community_data;
+            // check exist
+            match <CommunityDatas<T>>::get(name_of_community.clone()) {
+                Some(result) => community_data = result,
+                None => return Err(Error::<T>::IsNotExisted)?,
+            };
+            // check core member do
+            let who = ensure_signed(origin)?;
+            let result = community_data.core_member.iter().find(|&s| s == &who);
+            if result == None{
+                return Err(Error::<T>::OnlyCoreMember)?;
+            }
+            community_data.member.retain(|x| x!=&address_of_member);
+            community_data.register_block_number = <frame_system::Module<T>>::block_number();
+            <CommunityDatas<T>>::insert(community_data.name.clone(), community_data);
+            Self::deposit_event(RawEvent::RemoveMemberOfCommunity(name_of_community.clone()));
+            Ok(())
+        }
+
+        /// remove vote of the community
+        #[weight = 10_000]
+        pub fn remove_vote_of_community(origin,name_of_community:Vec<u8>) -> dispatch::DispatchResult {
+            let mut community_data;
+            // check exist
+            match <CommunityDatas<T>>::get(name_of_community.clone()) {
+                Some(result) => community_data = result,
+                None => return Err(Error::<T>::IsNotExisted)?,
+            };
+            // check core member do
+            let who = ensure_signed(origin)?;
+            let result = community_data.core_member.iter().find(|&s| s == &who);
+            if result == None{
+                return Err(Error::<T>::OnlyCoreMember)?;
+            }
+            // check voter is 2/3 and remove
+            let core_member_count = community_data.core_member.len();
+            let remove_voters_count = community_data.remove_votes.len() + 1;
+            if (remove_voters_count / core_member_count) > (2 / 3){
+                <CommunityDatas<T>>::remove(community_data.name.clone());
+                Self::deposit_event(RawEvent::RemoveCommunity(name_of_community.clone()));
+                return Ok(());
+            }
+
+            community_data.remove_votes.push(who.clone());
+            community_data.register_block_number = <frame_system::Module<T>>::block_number();
+            <CommunityDatas<T>>::insert(community_data.name.clone(), community_data);
+            Self::deposit_event(RawEvent::RemoveVoteMemberAdded(who.clone()));
+            Ok(())
+
+        }
+
+        /// post evaluation
+        #[weight = 10_000]
+        pub fn post_evaluation(target_persion:AccountId, point:u8, description:Vec<u8>) -> dispatch::DispatchResult {
+
+        }
+
     }
 }
